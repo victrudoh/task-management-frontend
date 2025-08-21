@@ -57,6 +57,11 @@
                 <span class="font-medium text-gray-800">Status:</span>
                 {{ task.status }}
               </p>
+
+              <p class="text-sm text-gray-600">
+                <span class="font-medium text-gray-800">Role Attached:</span>
+                {{ useRoleStore().roles.find(role => role.id == task.role_nature_id).name }}
+              </p>
             </div>
 
             <div class="mt-6 flex justify-end space-x-2">
@@ -79,6 +84,7 @@
 import { ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { useUserStore } from '@/store/userStore'
+import { useRoleStore } from '@/store/roleStore'
 
 const userStore = useUserStore()
 
@@ -94,6 +100,7 @@ const props = defineProps({
       priority: '',
       deadline: '',
       status: '',
+      role_nature_id: '',
     }),
   },
 })

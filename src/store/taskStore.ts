@@ -13,6 +13,7 @@ export const useTaskStore = defineStore('taskStore', () => {
     try {
       const res = await getTasks()
       tasks.value = res.data
+      // tasks.value.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch tasks'
     } finally {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/store/authStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
@@ -12,26 +12,13 @@ const userStore = useUserStore()
 const isModalOpen = ref(false)
 const isViewOpen = ref(false)
 const selectedTask = ref({})
+const errorMessage = ref('')
+const successMessage = ref('')
 
 onMounted(() => {
   taskStore.fetchTasks()
   userStore.fetchUsers()
-  console.log('Users fetched:', userStore.users)
-  console.log('Tasks fetched:', taskStore.tasks)
 })
-
-// Create a map of userId → email
-const userEmailMap = computed(() => {
-  return userStore.users.reduce((map, user) => {
-    map[user.id] = user.email
-    return map
-  }, {} as Record<number, string>)
-})
-
-// Helper function to fetch email safely
-const getUserEmail = (id: number) => {
-  return userEmailMap.value[id] || 'Unassigned'
-}
 
 const addTask = (task: any) => {
   taskStore.addTask(task).then(() => {
@@ -49,19 +36,48 @@ const deleteTask = (id: any) => {
   })
 }
 
-function openViewTask(task) {
+function openViewTask(task:any) {
   selectedTask.value = task
   isViewOpen.value = true
 }
 
 const editStatus = (id: any, status: string) => {
-  taskStore.editTask(id, { 'status':status }).then(() => {
+  try {
+    taskStore.editTask(id, { 'status':status }).then(() => {
+    successMessage.value = 'Status edited successfuly'
+    errorMessage.value = ''
+    taskStore.fetchTasks()
+  })
+  } catch (error:any) {
+    successMessage.value = ''
+    errorMessage.value = error?.data?.message
+  }
+}
+
+const editAssignee = (id: any, assigned_to_id: string) => {
+  errorMessage.value = userStore.users.find(user => user.id === assigned_to_id).role_id
+  successMessage.value = taskStore.tasks.find(task=> task.id === id).role_nature_id
+  const compatible = userStore.users.find(user => user.id === assigned_to_id).role_id === taskStore.tasks.find(task=> task.id === id).role_nature_id
+  // check if assignee has same role as nature of role
+  if (!compatible) {
+    errorMessage.value = 'Assignee does not have the same role as the task nature'
+    successMessage.value = ''
+    taskStore.fetchTasks()
+    return
+  }
+  console.log(`Editing task ${id} assignee to ${assigned_to_id} and they are compatible: ${compatible}`)
+  taskStore.editTask(id, { 'assigned_to_id':assigned_to_id }).then(() => {
+    successMessage.value = 'Assignee edited successfuly'
+    errorMessage.value = ''
     taskStore.fetchTasks()
   })
 }
 
-const editAssignee = (id: any, assigned_to_id: string) => {
-  taskStore.editTask(id, { 'assigned_to_id':assigned_to_id }).then(() => {
+const editPercentage = (id: any, percentage_completed: string, e:any) => {
+  taskStore.editTask(id, { 'percentage_completed':percentage_completed }).then(() => {
+    successMessage.value = 'Percentage completed edited successfuly'
+    errorMessage.value = ''
+    e.target.blur() // remove focus from input
     taskStore.fetchTasks()
   })
 }
@@ -106,6 +122,12 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
     </div> -->
 
     <div class="space-y-2">
+      <div v-if="successMessage" class="text-green-600 mb-2">
+        {{ successMessage }}
+      </div>
+      <div v-if="errorMessage" class="text-red-600 mb-2">
+        {{ errorMessage }}
+      </div>
       <div class="grid grid-cols-1 bg-white p-3 rounded shadow" v-if="taskStore.tasks.length == 0">
         <span class="text-gray-500">No tasks available</span>
       </div>
@@ -116,8 +138,8 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
         </div>
         <div class="flex items-center justify-end">
           <!-- <span @click="openViewTask(task)" class="cursor-pointer rounded text-xs p-2">{{ getUserEmail(task.assigned_to_id) }}</span> -->
-          <span @click="openViewTask(task)" class="cursor-pointer rounded text-xs p-1">Assigned to:</span>
-          <select v-model="task.assigned_to_id" class="border p-2 rounded text-xs" @change="editAssignee(task.id, task.assigned_to_id)">
+          <span v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"  @click="openViewTask(task)" class="cursor-pointer rounded text-xs p-1">Assigned to:</span>
+          <select v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'" v-model="task.assigned_to_id" class="border p-2 rounded text-xs" @change="editAssignee(task.id, task.assigned_to_id)">
             <option value="">--Select Status--</option>
             <option 
               v-for="user in userStore.users" 
@@ -141,6 +163,7 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
               {{ option }}
             </option>
           </select>
+          <input type="number" v-model="task.percentage_completed" class="border p-2 rounded text-xs w-10" :disabled="task.status=='Todo' || task.status=='Done'" @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"/>
           <button @click="deleteTask(task.id)" v-if="userRole=='Admin' || userRole=='Manager'" class="border border-1 border-green rounded text-xs p-2">Delete</button>
         </div>
       </div>
