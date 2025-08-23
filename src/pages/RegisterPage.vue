@@ -25,10 +25,7 @@
         <input v-model="password" type="password" placeholder="Password" class="w-full border p-2 mb-3 rounded" required />
         <select v-model="role_id" class="w-full border p-2 mb-3 rounded" required>
             <option value="" disabled selected>Select Role</option>
-            <option value="1">Admin</option>
-            <option value="2">Manager</option>
-            <option value="3">Developer</option>
-            <option value="4">Designer</option>
+            <option v-for="role in roleStore.roles" :key="role.id" :value="role.id">{{role.name}}</option>
         </select>
 
         <button
@@ -44,17 +41,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useAuthStore } from '@/store/authStore';
+import { useRoleStore } from '@/store/roleStore';
 import { useRouter } from 'vue-router';
 
 const auth = useAuthStore();
+const roleStore = useRoleStore();
 const router = useRouter();
 
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const role_id = ref('');
+
+onMounted(()=>{
+  roleStore.fetchRoles()
+})
 
 async function handleRegister() {
   await auth.register({ name: name.value, email: email.value, password: password.value });

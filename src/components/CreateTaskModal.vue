@@ -1,5 +1,5 @@
 <template>
-  <TransitionRoot as="template" :show="isOpen">
+  <TransitionRoot as="template" :show="props.isOpen">
     <Dialog as="div" class="relative z-50" @close="closeModal">
       <!-- Background overlay -->
       <TransitionChild
@@ -83,6 +83,7 @@
                     type="date"
                     required
                       class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                    @change="validateDate"
                   />
                 </div>
               </div>
@@ -172,7 +173,6 @@ const due_date = ref('')
 const priority = ref('')
 const assigned_to_id = ref('')
 const role_nature_id = ref('')
-const buttonDisabled = ref(true)
 
 const closeModal = () => {
   emits('close')
@@ -208,7 +208,7 @@ const createTask = () => {
   due_date.value = ''
   priority.value = ''
   assigned_to_id.value = ''
-  role_nature_id = ''
+  role_nature_id.value = ''
 }
 
 const allFieldsFilled = computed(() => {
@@ -229,6 +229,12 @@ const checkAssignee = () => {
       toast.error('Assignee does not match the selected role')
       assigned_to_id.value = ''
     } 
+  }
+}
+
+const validateDate = () =>{
+  if (new Date (Date.now()) > new Date(due_date.value)){
+    due_date.value = ""
   }
 }
 </script>

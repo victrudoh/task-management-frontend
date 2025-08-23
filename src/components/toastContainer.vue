@@ -1,6 +1,6 @@
 <!-- components/ToastContainer.vue -->
 <template>
-  <div class="fixed top-20 right-4 space-y-2 z-50">
+  <div class="fixed top-20 right-4 space-y-2 z-100">
     <transition-group name="fade" tag="div">
       <div
         v-for="toast in toastStore.toasts"

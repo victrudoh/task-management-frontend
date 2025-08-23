@@ -31,7 +31,7 @@ const deleteUser = (id: any) => {
   toast.success('User deleted successfully')
 }
 
-function openViewUser(user) {
+function openViewUser(user: any) {
   selectedUser.value = user
   isViewOpen.value = true
 }
@@ -54,7 +54,7 @@ console.log(new Date (Date.now()-7*24*60*60*1000) > new Date('2025-08-10T09:56:2
     <!-- use grid form -->
       
     <div class="grid grid-cols-1 bg-white p-3 rounded shadow" v-if="filteredUsers.length == 0">
-      <span class="text-gray-500">No user matches your search</span>
+      <span class="text-gray-500">No found</span>
     </div>
     <div v-for="user in filteredUsers" :key="user.id" class="grid grid-cols-2 bg-white p-3 rounded shadow mb-2 items-center">
       <div class="flex items-center space-x-2">

@@ -1,5 +1,5 @@
 <template>
-  <TransitionRoot as="template" :show="isOpen">
+  <TransitionRoot as="template" :show="props.isOpen">
     <Dialog as="div" class="relative z-50" @close="closeModal">
       <!-- Background overlay -->
       <TransitionChild

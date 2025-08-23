@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '@/store/authStore'
-import { useUserStore } from '@/store/userStore'
 import { useToastStore } from '@/store/toastStore'
 import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 
 const authStore = useAuthStore()
-const userStore = useUserStore()
 const toast = useToastStore()
 
-const name = ref(authStore.user.name)
-const email = ref(authStore.user.email)
+const name = ref(authStore.user?.name)
+const email = ref(authStore.user?.email)
 const isModalOpen = ref(false)
 
 const saveChanges = () => {  

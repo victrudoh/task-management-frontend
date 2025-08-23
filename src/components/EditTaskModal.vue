@@ -81,6 +81,7 @@
                     type="date"
                     required
                       class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                    @change="validateDate"
                   />
                 </div>
                 </div>
@@ -253,6 +254,12 @@ const checkAssignee = () => {
       toast.error('Assignee does not match the selected role')
       assigned_to_id.value = ''
     } 
+  }
+}
+
+const validateDate = () =>{
+  if (new Date (Date.now()) > new Date(due_date.value)){
+    due_date.value = ""
   }
 }
 </script>
