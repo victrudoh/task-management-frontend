@@ -1,27 +1,42 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/store/authStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
+import { useToastStore } from '@/store/toastStore'
 import CreateTaskModal from '@/components/CreateTaskModal.vue'
 import ViewTaskModal from '@/components/ViewTaskModal.vue'
+import EditTaskModal from '@/components/EditTaskModal.vue'
 
 const userRole = useAuthStore().role // simulate logged-in role
 const taskStore = useTaskStore()
 const userStore = useUserStore()
+const toast = useToastStore()
 const isModalOpen = ref(false)
 const isViewOpen = ref(false)
+const isEditOpen = ref(false)
 const selectedTask = ref({})
-const errorMessage = ref('')
-const successMessage = ref('')
 
 onMounted(() => {
   taskStore.fetchTasks()
   userStore.fetchUsers()
 })
 
+// defineProps<{ searchQuery: string }>()
+
+const props = defineProps<{ searchQuery: string }>()
+
+const filteredTasks = computed(() =>
+  taskStore.tasks.filter(task =>
+    task.title.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
+    task.description.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
+    task.priority.toLowerCase().includes(props.searchQuery.toLowerCase())
+  )
+);
+
 const addTask = (task: any) => {
   taskStore.addTask(task).then(() => {
+    toast.success('Task created successfully')
     taskStore.fetchTasks()
   })
 }
@@ -33,50 +48,57 @@ function openCreateTask() {
 const deleteTask = (id: any) => {
   taskStore.removeTask(id).then(() => {
     taskStore.fetchTasks()
+    toast.success('Task deleted successfully')
   })
 }
+
 
 function openViewTask(task:any) {
   selectedTask.value = task
   isViewOpen.value = true
 }
 
+function openEditTask(task:any) {
+  selectedTask.value = task
+  isEditOpen.value = true
+}
+
+const editTask = (task: any) => {
+  taskStore.editTask(task.id, task).then(() => {
+    toast.success('Task created successfully')
+    taskStore.fetchTasks()
+  })
+}
+
 const editStatus = (id: any, status: string) => {
   try {
     taskStore.editTask(id, { 'status':status }).then(() => {
-    successMessage.value = 'Status edited successfuly'
-    errorMessage.value = ''
+    toast.success(`Task status updated to ${status}`)
     taskStore.fetchTasks()
   })
   } catch (error:any) {
-    successMessage.value = ''
-    errorMessage.value = error?.data?.message
+    toast.error(error?.data?.message)
   }
 }
 
 const editAssignee = (id: any, assigned_to_id: string) => {
-  errorMessage.value = userStore.users.find(user => user.id === assigned_to_id).role_id
-  successMessage.value = taskStore.tasks.find(task=> task.id === id).role_nature_id
-  const compatible = userStore.users.find(user => user.id === assigned_to_id).role_id === taskStore.tasks.find(task=> task.id === id).role_nature_id
+  const compatible = userStore.users.find(user => user.id == assigned_to_id).role_id == taskStore.tasks.find(task=> task.id == id).role_nature_id
   // check if assignee has same role as nature of role
   if (!compatible) {
-    errorMessage.value = 'Assignee does not have the same role as the task nature'
-    successMessage.value = ''
+    toast.error('Assignee does not have the same role as the task nature')
     taskStore.fetchTasks()
     return
   }
   console.log(`Editing task ${id} assignee to ${assigned_to_id} and they are compatible: ${compatible}`)
   taskStore.editTask(id, { 'assigned_to_id':assigned_to_id }).then(() => {
-    successMessage.value = 'Assignee edited successfuly'
-    errorMessage.value = ''
+    toast.success('Assignee edited successfuly')
     taskStore.fetchTasks()
   })
 }
 
 const editPercentage = (id: any, percentage_completed: string, e:any) => {
   taskStore.editTask(id, { 'percentage_completed':percentage_completed }).then(() => {
-    successMessage.value = 'Percentage completed edited successfuly'
-    errorMessage.value = ''
+    toast.success('Percentage completed edited successfuly')
     e.target.blur() // remove focus from input
     taskStore.fetchTasks()
   })
@@ -122,19 +144,16 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
     </div> -->
 
     <div class="space-y-2">
-      <div v-if="successMessage" class="text-green-600 mb-2">
-        {{ successMessage }}
-      </div>
-      <div v-if="errorMessage" class="text-red-600 mb-2">
-        {{ errorMessage }}
-      </div>
       <div class="grid grid-cols-1 bg-white p-3 rounded shadow" v-if="taskStore.tasks.length == 0">
         <span class="text-gray-500">No tasks available</span>
       </div>
-      <div class="grid grid-cols-5 bg-white p-3 rounded shadow" v-for="task in taskStore.tasks" :key="task.id" v-if="taskStore.tasks.length > 0">
+      <div class="grid grid-cols-1 bg-white p-3 rounded shadow" v-if="filteredTasks.length == 0">
+        <span class="text-gray-500">No tasks matches your search</span>
+      </div>
+      <div class="grid grid-cols-5 bg-white p-3 rounded shadow" v-for="task in filteredTasks" :key="task.id" v-if="taskStore.tasks.length > 0">
         <div class="flex items-center space-x-2">
           <span @click="openViewTask(task)" class="cursor-pointer">{{ task.title }}</span>
-          <span v-if="new Date (Date.now()-2*24*60*60*1000) < new Date(task.createdAt)" class="bg-green-500 text-white p-1 text-[8px] rounded">new</span>
+          <span v-if="new Date (Date.now()-2*24*60*60*1000) < new Date(task.createdAt)" class="bg-green-500 text-white px-2 py-1 text-[8px] rounded-lg">new</span>
         </div>
         <div class="flex items-center justify-end">
           <!-- <span @click="openViewTask(task)" class="cursor-pointer rounded text-xs p-2">{{ getUserEmail(task.assigned_to_id) }}</span> -->
@@ -153,7 +172,16 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
           <span class="rounded text-xs p-2">Due date : {{task.due_date}}</span>
         </div>
         <div class="flex space-x-2 items-center justify-end col-span-2">
-          <span class="border border-1 border-green rounded text-xs p-2">{{task.priority}} priority</span>
+          <span 
+            class="rounded-lg text-white text-[8px] px-2 py-1" 
+            :class="{
+              'bg-red-500': task.priority === 'High',
+              'bg-yellow-500': task.priority === 'Medium',
+              'bg-green-500': task.priority === 'Low'
+            }"
+          >
+            {{ task.priority }} priority
+          </span>
           <select v-model="task.status" class="border p-2 rounded text-xs" @change="editStatus(task.id, task.status)">
             <option value="">--Select Status--</option>
             <option 
@@ -164,6 +192,8 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
             </option>
           </select>
           <input type="number" v-model="task.percentage_completed" class="border p-2 rounded text-xs w-10" :disabled="task.status=='Todo' || task.status=='Done'" @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"/>
+          <button @click="openViewTask(task)" class="border border-1 border-green rounded text-xs p-2">View</button>
+          <button @click="openEditTask(task)" class="border border-1 border-green rounded text-xs p-2">Edit</button>
           <button @click="deleteTask(task.id)" v-if="userRole=='Admin' || userRole=='Manager'" class="border border-1 border-green rounded text-xs p-2">Delete</button>
         </div>
       </div>
@@ -215,6 +245,13 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
       :isOpen="isModalOpen"
       @close="isModalOpen = false"
       @taskCreated="addTask"
+    />
+
+    <EditTaskModal
+      :isOpen="isEditOpen"
+      :task="selectedTask"
+      @close="isEditOpen = false"
+      @updateTask="editTask"
     />
 
     <ViewTaskModal

@@ -26,30 +26,43 @@
           leave-to="opacity-0 scale-95"
         >
           <DialogPanel
-            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+            class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
           >
+            <!-- Header -->
+            <div class="flex justify-between items-center border-b px-6 py-4 bg-gray-50">
             <DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">
               {{ user.name }}
             </DialogTitle>
+            <button
+                @click="closeModal"
+                class="text-gray-400 hover:text-gray-600 transition"
+              >
+                ✕
+              </button>
+            </div>
 
-            <div class="mt-4 space-y-2">
-              <p class="text-sm text-gray-600">
+            <!-- Body (scrollable) -->
+            <div class="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4">
+              <div class="text-sm text-gray-600">
                 <span class="font-medium text-gray-800">Email:</span>
-                {{ user.email }}
-              </p>
-            </div>
+                <p class="text-gray-700">
+                  {{ user.email }}
+                </p>
+              </div>
 
-            <div class="mt-4 space-y-2">
-              <p class="text-sm text-gray-600">
+              <div class="text-sm text-gray-600">
                 <span class="font-medium text-gray-800">Role:</span>
-                {{ user.role.name }}
-              </p>
+                <p class="text-gray-700">
+                  {{ user.role.name }}
+                </p>
+              </div>
             </div>
 
-            <div class="mt-6 flex justify-end space-x-2">
+            <!-- Footer -->
+            <div class="flex justify-end border-t px-6 py-4 bg-gray-50">
               <button
                 type="button"
-                class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="rounded-md bg-gray-800 px-5 py-2 text-sm text-white hover:bg-gray-700 transition"
                 @click="closeModal"
               >
                 Close

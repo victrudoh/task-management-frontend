@@ -26,20 +26,16 @@
           leave-to="opacity-0 scale-95"
         >
           <DialogPanel
-            class="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg"
+            class="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl border border-gray-100"
           >
             <!-- Title -->
-            <DialogTitle class="text-lg font-semibold text-gray-900 mb-4">
+            <DialogTitle class="text-lg font-semibold text-gray-900 mb-6">
               Change Password
             </DialogTitle>
 
             <!-- Form -->
             <form @submit.prevent="changePassword">
-              <div class="space-y-4">
-                <!-- error text -->
-                <div v-if="errorMessage" class="text-red-500 mb-2">
-                  {{ errorMessage }}
-                </div>
+              <div class="space-y-5">
                 <!-- Input fields -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700">
@@ -49,7 +45,7 @@
                     v-model="newPassword"
                     type="password"
                     required
-                    class="mt-1 block w-full rounded p-1 border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   />
                 </div>
                 <div>
@@ -60,7 +56,7 @@
                     v-model="confirmNewPassword"
                     type="password"
                     required
-                    class="mt-1 block w-full rounded p-1 border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   />
                 </div>
               </div>
@@ -93,7 +89,9 @@
 import { ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { useAuthStore } from '@/store/authStore';
+import { useToastStore } from '@/store/toastStore'
 
+const toast = useToastStore()
 const props = defineProps<{
   isOpen: boolean
 }>()
@@ -102,7 +100,6 @@ const emits = defineEmits(['close', 'passwordChanged'])
 
 const newPassword = ref('')
 const confirmNewPassword = ref('')
-const errorMessage = ref('')
 
 const closeModal = () => {
   emits('close')
@@ -111,16 +108,14 @@ const closeModal = () => {
 const changePassword = () => {
 
   if (newPassword.value !== confirmNewPassword.value) {
-    errorMessage.value='Passwords do not match'
+    toast.error('Passwords do not match')
     return
   }
   if (newPassword.value.length < 6) {
-    errorMessage.value='Password must be at least 6 characters long'
+    toast.error('Password must be at least 6 characters long')
     return
   }
 
-  errorMessage.value = '' // Reset error message
-  
   // Call the API to change the password
   // Assuming we have a method in authStore to change the password
   const authStore = useAuthStore()
@@ -132,11 +127,10 @@ const changePassword = () => {
     // Reset fields
     newPassword.value = ''
     confirmNewPassword.value = ''
-    errorMessage.value = ''
     closeModal()
 
   } catch (error:any) {
-    errorMessage.value = error
+    toast.error(error)
     console.error('Error changing password:', error)
     return
   }

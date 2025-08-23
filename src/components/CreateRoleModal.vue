@@ -26,16 +26,16 @@
           leave-to="opacity-0 scale-95"
         >
           <DialogPanel
-            class="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg"
+            class="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl border border-gray-100"
           >
             <!-- Title -->
-            <DialogTitle class="text-lg font-semibold text-gray-900 mb-4">
+            <DialogTitle class="text-lg font-semibold text-gray-900 mb-6">
               Create New Role
             </DialogTitle>
 
             <!-- Form -->
             <form @submit.prevent="createRole">
-              <div class="space-y-4">
+              <div class="space-y-5">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">
                     Name
@@ -44,7 +44,7 @@
                     v-model="name"
                     type="text"
                     required
-                    class="mt-1 block w-full rounded p-1 border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   />
                 </div>
               </div>
@@ -54,13 +54,13 @@
                 <button
                   type="button"
                   @click="closeModal"
-                  class="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
+                  class="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Create Role
                 </button>

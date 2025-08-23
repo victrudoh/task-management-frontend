@@ -11,11 +11,11 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/30 " />
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" />
       </TransitionChild>
 
       <!-- Centered modal -->
-      <div class="fixed inset-0 flex items-center justify-center p-4">
+      <div class="fixed inset-0 flex items-center justify-center p-6">
         <TransitionChild
           as="template"
           enter="ease-out duration-300"
@@ -26,48 +26,65 @@
           leave-to="opacity-0 scale-95"
         >
           <DialogPanel
-            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+            class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
           >
-            <DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">
-              {{ task.title }}
-            </DialogTitle>
-
-            <div class="mt-4 space-y-2">
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Description:</span>
-                {{ task.description }}
-              </p>
-
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Assigned To:</span>
-                {{ userStore.users.find(user => user.id == task.assigned_to_id).name}}
-              </p>
-
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Priority:</span>
-                {{ task.priority }}
-              </p>
-
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Deadline:</span>
-                {{ task.due_date }}
-              </p>
-
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Status:</span>
-                {{ task.status }}
-              </p>
-
-              <p class="text-sm text-gray-600">
-                <span class="font-medium text-gray-800">Role Attached:</span>
-                {{ useRoleStore().roles.find(role => role.id == task.role_nature_id).name }}
-              </p>
+            <!-- Header -->
+            <div class="flex justify-between items-center border-b px-6 py-4 bg-gray-50">
+              <DialogTitle as="h3" class="text-xl font-semibold text-gray-900">
+                {{ task.title }}
+              </DialogTitle>
+              <button
+                @click="closeModal"
+                class="text-gray-400 hover:text-gray-600 transition"
+              >
+                ✕
+              </button>
             </div>
 
-            <div class="mt-6 flex justify-end space-x-2">
+            <!-- Body (scrollable) -->
+            <div class="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4">
+              <div>
+                <p class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Description:</span>
+                </p>
+                <p class="text-gray-700 bg-gray-50 p-3 rounded-md">
+                  {{ task.description }}
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Assigned To:</span>
+                  <p class="text-gray-700">
+                    {{ userStore.users.find(user => user.id == task.assigned_to_id).name }}
+                  </p>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Priority:</span>
+                  <p class="text-gray-700">{{ task.priority }}</p>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Deadline:</span>
+                  <p class="text-gray-700">{{ task.due_date }}</p>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Status:</span>
+                  <p class="text-gray-700">{{ task.status }}</p>
+                </div>
+                <div class="text-sm text-gray-600 col-span-2">
+                  <span class="font-medium text-gray-800">Role Attached:</span>
+                  <p class="text-gray-700">
+                    {{ useRoleStore().roles.find(role => role.id == task.role_nature_id).name }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end border-t px-6 py-4 bg-gray-50">
               <button
                 type="button"
-                class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="rounded-md bg-gray-800 px-5 py-2 text-sm text-white hover:bg-gray-700 transition"
                 @click="closeModal"
               >
                 Close

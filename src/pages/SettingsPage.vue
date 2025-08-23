@@ -2,21 +2,18 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/store/authStore'
 import { useUserStore } from '@/store/userStore'
+import { useToastStore } from '@/store/toastStore'
 import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const toast = useToastStore()
 
 const name = ref(authStore.user.name)
 const email = ref(authStore.user.email)
 const isModalOpen = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
 
-const saveChanges = () => {
-  errorMessage.value = ''
-  successMessage.value = ''
-  
+const saveChanges = () => {  
   const updatedUser = {
     name: name.value,
     email: email.value,
@@ -25,20 +22,20 @@ const saveChanges = () => {
   authStore.updateMe(updatedUser)
     .then(() => {
       console.log('User updated:', updatedUser)
-      successMessage.value = 'Profile updated successfully'
-      errorMessage.value = ''
+      toast.success('Profile updated successfully')
       // refresh the page
       window.location.reload()
   
     })
     .catch(error => {
+      toast.error('Failed to update profile')
       console.error('Error updating user:', error)
     })
 }
 
 const passwordChanged = () => {
   // Optionally, you can show a success message or refresh the user data
-  successMessage.value='Password changed successfully'
+  toast.success('Password changed successfully')
 }
 </script>
 
@@ -47,18 +44,14 @@ const passwordChanged = () => {
     <h1 class="text-2xl font-bold mb-4">Settings</h1>
 
     <div class="bg-white p-4 rounded shadow">
-      <label class="block mb-2">Name</label>
+      <label class="block text-sm font-medium text-gray-700">Name</label>
       <!-- Success/error message -->
-      <div v-if="successMessage" class="text-green-600 mb-2">
-        {{ successMessage }}
-      </div>
-      <div v-if="errorMessage" class="text-red-600 mb-2">
-        {{ errorMessage }}
-      </div>
-      <input v-model="name" class="border p-2 w-full mb-4" />
+      <input v-model="name" 
+      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm" />
 
-      <label class="block mb-2">Email</label>
-      <input v-model="email" class="border p-2 w-full mb-4" />
+      <label class="block text-sm font-medium text-gray-700">Email</label>
+      <input v-model="email" 
+      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm" />
 
       <div class="flex justify-end space-x-2">
         <button @click="saveChanges" class="bg-green-500 text-white px-4 py-2 rounded">
