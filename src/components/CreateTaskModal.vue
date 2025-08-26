@@ -74,17 +74,31 @@
                   </select>
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    Deadline
-                  </label>
-                  <input
-                    v-model="due_date"
-                    type="date"
-                    required
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
-                    @change="validateDate"
-                  />
+                <div class="flex space-x-4">
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Start Date
+                    </label>
+                    <input
+                      v-model="start_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateStartDate()"
+                    />
+                  </div>
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Deadline
+                    </label>
+                    <input
+                      v-model="due_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateDueDate()"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -122,7 +136,7 @@
               </div>
 
               <!-- Actions -->
-              <div class="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white">
+              <div class="pt-6 flex justify-end gap-3">
                 <button
                   type="button"
                   @click="closeModal"
@@ -169,6 +183,7 @@ const emits = defineEmits(['close', 'taskCreated'])
 
 const title = ref('')
 const description = ref('')
+const start_date = ref('')
 const due_date = ref('')
 const priority = ref('')
 const assigned_to_id = ref('')
@@ -190,6 +205,7 @@ const createTask = () => {
   const newTask = {
     title: title.value,
     description: description.value,
+    start_date: start_date.value,
     due_date: due_date.value,
     priority: priority.value,
     assigned_to_id: assigned_to_id.value, // Default to
@@ -205,6 +221,7 @@ const createTask = () => {
   // Reset fields
   title.value = ''
   description.value = ''
+  start_date.value = ''
   due_date.value = ''
   priority.value = ''
   assigned_to_id.value = ''
@@ -215,6 +232,7 @@ const allFieldsFilled = computed(() => {
   return (
     title.value.trim() !== "" &&
     description.value.trim() !== "" &&
+    start_date.value !== "" &&
     due_date.value !== "" &&
     priority.value !== "" &&
     assigned_to_id.value !== ""
@@ -232,8 +250,14 @@ const checkAssignee = () => {
   }
 }
 
-const validateDate = () =>{
-  if (new Date (Date.now()) > new Date(due_date.value)){
+const validateStartDate = () =>{
+  if (new Date (Date.now()) > new Date(start_date.value)) {
+    start_date.value = ""
+  }
+}
+
+const validateDueDate = () =>{
+  if (new Date (Date.now()) > new Date(due_date.value)) {
     due_date.value = ""
   }
 }

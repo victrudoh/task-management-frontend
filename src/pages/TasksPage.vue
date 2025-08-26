@@ -120,6 +120,10 @@ const editAssignee = (id: any, assigned_to_id: string) => {
 }
 
 const editPercentage = (id: any, percentage_completed: string, e:any) => {
+  if (percentage_completed == '100'){
+    editStatus(id, 'Done')
+    return  
+  }
   taskStore.editTask(id, { 'percentage_completed':percentage_completed }).then(() => {
     toast.success('Percentage completed edited successfuly')
     e.target.blur() // remove focus from input
@@ -138,39 +142,11 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
     <div class="mb-4" v-if="userRole== 'Admin' || userRole == 'Manager'">
       <button @click="openCreateTask" class="bg-blue-500 text-white px-4 py-2 rounded">Create Task</button>
     </div>
-
-    <!-- <div class="grid">
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Filter by User</label>
-        <select
-          v-model="taskStore.filterUserId"
-          class="mt-1 block w-full rounded p-1 border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-        >
-          <option value="">All Users</option>
-          <option v-for="user in userStore.users" :key="user.id" :value="user.id">
-            {{ user.name }}
-          </option>
-        </select>
-      </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700">Filter by Status</label>
-        <select
-          v-model="taskStore.filterStatus"
-          class="mt-1 block w-full rounded p-1 border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-        >
-          <option value="">All Statuses</option>
-          <option value="Todo">Todo</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Done">Done</option>
-        </select>
-      </div>
-    </div> -->
-
     <div v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'" class="space-y-6">
       <div v-for="status in statusOptions" :key="status">
-        <h2 class="text-lg font-bold mb-2 text-sm">{{ status }}</h2>
+        <h2 class="text-lg font-bold mb-2 text-md">{{ status }}</h2>
 
-        <div v-if="groupedTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-sm text-gray-500">
+        <div v-if="groupedTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-md text-gray-500">
           No {{ status }} tasks
         </div>
 
@@ -181,10 +157,10 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
         >
           <!-- title -->
           <div class="flex items-center space-x-2">
-            <span @click="openViewTask(task)" class="cursor-pointer text-sm">{{ task.title }}</span>
+            <span @click="openViewTask(task)" class="cursor-pointer text-md">{{ task.title }}</span>
             <span
               v-if="new Date(Date.now() - 2*24*60*60*1000) < new Date(task.createdAt)"
-              class="bg-green-500 text-white px-1 py-[.5px] text-[8px] rounded-lg block flex items-center"
+              class="bg-green-500 text-white px-1 py-[.5px] text-[9px] rounded-lg block flex items-center"
             >
               new
             </span>
@@ -195,14 +171,14 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
             <span
               v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
               @click="openViewTask(task)"
-              class="cursor-pointer rounded text-xs p-1"
+              class="cursor-pointer rounded text-sm p-1"
             >
               Assigned to:
             </span>
             <select
               v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
               v-model="task.assigned_to_id"
-              class="border p-2 rounded text-xs"
+              class="border p-2 rounded text-sm"
               @change="editAssignee(task.id, task.assigned_to_id)"
             >
               <option value="">--Select User--</option>
@@ -218,13 +194,13 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
 
           <!-- due date -->
           <div class="flex items-center justify-end">
-            <span class="rounded text-xs p-2">Due date : {{ task.due_date }}</span>
+            <span class="rounded text-sm p-2">Due date : {{ task.due_date }}</span>
           </div>
 
           <!-- actions -->
           <div class="flex space-x-2 items-center justify-end col-span-2">
             <span
-              class="rounded-lg text-white text-[8px] px-2 py-1"
+              class="rounded-lg text-white text-[9px] px-2 py-1"
               :class="{
                 'bg-red-500': task.priority === 'High',
                 'bg-yellow-500': task.priority === 'Medium',
@@ -236,7 +212,7 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
 
             <select
               v-model="task.status"
-              class="border p-2 rounded text-xs"
+              class="border p-2 rounded text-sm"
               @change="editStatus(task.id, task.status)"
             >
               <option value="">--Select Status--</option>
@@ -248,17 +224,17 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
             <input
               type="number"
               v-model="task.percentage_completed"
-              class="border p-2 rounded text-xs w-10"
+              class="border p-2 rounded text-sm w-10"
               :disabled="task.status == 'Todo' || task.status == 'Done'"
               @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
             />
 
-            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-xs p-2">View</button>
-            <button @click="openEditTask(task)" class="border border-1 border-green rounded text-xs p-2">Edit</button>
+            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-sm p-2">View</button>
+            <button @click="openEditTask(task)" class="border border-1 border-green rounded text-sm p-2">Edit</button>
             <button
               @click="deleteTask(task.id)"
               v-if="userRole == 'Admin' || userRole == 'Manager'"
-              class="border border-1 border-green rounded text-xs p-2"
+              class="border border-1 border-green rounded text-sm p-2"
             >
               Delete
             </button>
@@ -269,9 +245,9 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
 
     <div v-if="!(userRole == 'Admin' || userRole == 'Manager')" class="space-y-6">
       <div v-for="status in statusOptions" :key="status">
-        <h2 class="text-lg font-bold mb-2 text-sm">{{ status }}</h2>
+        <h2 class="text-lg font-bold mb-2 text-md">{{ status }}</h2>
 
-        <div v-if="groupedPersonalTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-sm text-gray-500">
+        <div v-if="groupedPersonalTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-md text-gray-500">
           No {{ status }} tasks
         </div>
 
@@ -282,10 +258,10 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
         >
           <!-- title -->
           <div class="flex items-center space-x-2">
-            <span @click="openViewTask(task)" class="cursor-pointer text-sm">{{ task.title }}</span>
+            <span @click="openViewTask(task)" class="cursor-pointer text-md">{{ task.title }}</span>
             <span
               v-if="new Date(Date.now() - 2*24*60*60*1000) < new Date(task.createdAt)"
-              class="bg-green-500 text-white px-1 py-[.5px] text-[8px] rounded-lg block flex items-center"
+              class="bg-green-500 text-white px-1 py-[.5px] text-[9px] rounded-lg block flex items-center"
             >
               new
             </span>
@@ -296,14 +272,14 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
             <span
               v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
               @click="openViewTask(task)"
-              class="cursor-pointer rounded text-xs p-1"
+              class="cursor-pointer rounded text-sm p-1"
             >
               Assigned to:
             </span>
             <select
               v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
               v-model="task.assigned_to_id"
-              class="border p-2 rounded text-xs"
+              class="border p-2 rounded text-sm"
               @change="editAssignee(task.id, task.assigned_to_id)"
             >
               <option value="">--Select User--</option>
@@ -319,13 +295,13 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
 
           <!-- due date -->
           <div class="flex items-center justify-end">
-            <span class="rounded text-xs p-2">Due date : {{ task.due_date }}</span>
+            <span class="rounded text-sm p-2">Due date : {{ task.due_date }}</span>
           </div>
 
           <!-- actions -->
           <div class="flex space-x-2 items-center justify-end col-span-2">
             <span
-              class="rounded-lg text-white text-[8px] px-2 py-1"
+              class="rounded-lg text-white text-[9px] px-2 py-1"
               :class="{
                 'bg-red-500': task.priority === 'High',
                 'bg-yellow-500': task.priority === 'Medium',
@@ -337,7 +313,7 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
 
             <select
               v-model="task.status"
-              class="border p-2 rounded text-xs"
+              class="border p-2 rounded text-sm"
               @change="editStatus(task.id, task.status)"
             >
               <option value="">--Select Status--</option>
@@ -349,12 +325,12 @@ const statusOptions = ['Todo', 'In Progress', 'Done']
             <input
               type="number"
               v-model="task.percentage_completed"
-              class="border p-2 rounded text-xs w-10"
+              class="border p-2 rounded text-sm w-10"
               :disabled="task.status == 'Todo' || task.status == 'Done'"
               @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
             />
 
-            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-xs p-2">View</button>
+            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-sm p-2">View</button>
           </div>
         </div>
       </div>

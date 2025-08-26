@@ -64,6 +64,10 @@
                   <p class="text-gray-700">{{ task.priority }}</p>
                 </div>
                 <div class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Start Date:</span>
+                  <p class="text-gray-700">{{ task.start_date }}</p>
+                </div>
+                <div class="text-sm text-gray-600">
                   <span class="font-medium text-gray-800">Deadline:</span>
                   <p class="text-gray-700">{{ task.due_date }}</p>
                 </div>
@@ -115,6 +119,7 @@ const props = defineProps({
       description: '',
       assignedTo: '',
       priority: '',
+      start_date: '',
       deadline: '',
       status: '',
       role_nature_id: '',
