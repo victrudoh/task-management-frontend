@@ -312,11 +312,6 @@ const validateDueDate = (): boolean => {
     due_date.value = '';
     return false;
   }
-
-  // If you ALSO want to forbid due dates in the past (even without start), uncomment:
-  // const today = startOfDay(new Date());
-  // if (lt(d, today)) { due_date.value = ''; return false; }
-
   return true;
 };
 
