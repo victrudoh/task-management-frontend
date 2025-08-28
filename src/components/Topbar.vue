@@ -28,7 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
 
 const authStore = useAuthStore();
@@ -36,18 +37,28 @@ const userName = ref('User');
 const avatarUrl = ref('https://i.pravatar.cc/40'); // placeholder
 const searchQuery = ref('');
 
-// ✅ Emit search to parent
+// emit to parent
 const emit = defineEmits(['search']);
-const emitSearch = () => {
-  emit('search', searchQuery.value);
-};
+const emitSearch = () => emit('search', searchQuery.value);
+
+// ✅ clear on route change
+const route = useRoute();
+watch(
+  () => route.fullPath,
+  () => {
+    if (searchQuery.value) {
+      searchQuery.value = '';
+      emitSearch(); // send "" to parent so results reset
+    }
+  }
+);
 
 onMounted(() => {
   const user = JSON.stringify(authStore.user);
   if (user) {
     const parsed = JSON.parse(user);
     userName.value = parsed?.name || 'User';
-    avatarUrl.value = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName.value)
+    avatarUrl.value = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName.value);
   }
 });
 

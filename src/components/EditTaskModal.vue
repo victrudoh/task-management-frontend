@@ -44,27 +44,18 @@
                     v-model="title"
                     type="text"
                     required
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
-                  />
-                </div>
-
-                <!-- Description -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    v-model="description"
-                    rows="3"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Priority -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Priority</label>
+                  <label class="block text-sm font-medium text-gray-700">
+                    Priority
+                  </label>
                   <select
                     v-model="priority"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   >
                     <option value="">--Select--</option>
                     <option value="Low">Low</option>
@@ -73,18 +64,33 @@
                   </select>
                 </div>
 
-                <!-- Deadline -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Deadline</label>
-                  <input
-                    v-model="due_date"
-                    type="date"
-                    required
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
-                    @change="validateDate"
-                  />
+                <div class="flex space-x-4">
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Start Date
+                    </label>
+                    <input
+                      v-model="start_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateStartDate()"
+                    />
+                  </div>
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Deadline
+                    </label>
+                    <input
+                      v-model="due_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateDueDate()"
+                    />
+                  </div>
                 </div>
-                </div>
+              </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Role -->
@@ -92,7 +98,7 @@
                   <label class="block text-sm font-medium text-gray-700">Attach to Role</label>
                   <select
                     v-model="role_nature_id"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                     @change="checkAssignee()"
                   >
                     <option value="">--Select--</option>
@@ -107,7 +113,7 @@
                   <label class="block text-sm font-medium text-gray-700">Assignee</label>
                   <select
                     v-model="assigned_to_id"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   >
                     <option value="">--Select--</option>
                     <option v-for="user in userStore.users" :key="user.id" :value="user.id">
@@ -115,6 +121,17 @@
                     </option>
                   </select>
                 </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    v-model="description"
+                    rows="10"
+                    style="resize: none"
+                    class="border p-2 w-full mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                  />
                 </div>
               </div>
 
@@ -170,6 +187,7 @@ const props = defineProps({
       description: '',
       assigned_to_id: '',
       priority: '',
+      start_date: '',
       due_date: '',
       role_nature_id: '',
     }),
@@ -180,6 +198,7 @@ const emits = defineEmits(['close', 'updateTask'])
 
 const title = ref('')
 const description = ref('')
+const start_date = ref('')
 const due_date = ref('')
 const priority = ref('')
 const assigned_to_id = ref('')
@@ -193,6 +212,7 @@ watch(
     if (task) {
       title.value = task.title
       description.value = task.description
+      start_date.value = task.start_date
       due_date.value = task.due_date
       priority.value = task.priority
       assigned_to_id.value = task.assigned_to_id
@@ -225,6 +245,7 @@ const saveTask = () => {
     id: props.task.id,
     title: title.value,
     description: description.value,
+    start_date: start_date.value,
     due_date: due_date.value,
     priority: priority.value,
     assigned_to_id: assigned_to_id.value,
@@ -257,9 +278,46 @@ const checkAssignee = () => {
   }
 }
 
-const validateDate = () =>{
-  if (new Date (Date.now()) > new Date(due_date.value)){
-    due_date.value = ""
+/** Helpers */
+const toDate = (v: unknown): Date | null => {
+  if (!v) return null;
+  const s = String(v);
+  // Handle "YYYY-MM-DD" safely (avoid timezone surprises)
+  const d = new Date(s.includes('T') ? s : `${s}T00:00:00`);
+  return isNaN(d.getTime()) ? null : d;
+};
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const lt = (a: Date, b: Date) => startOfDay(a).getTime() < startOfDay(b).getTime();
+
+/** Validate that start date exists, is a real date, and not in the past */
+const validateStartDate = (): boolean => {
+  const s = toDate(start_date.value);
+  if (!s) { start_date.value = ''; return false; }
+
+  const today = startOfDay(new Date());
+  if (lt(s, today)) {           // start < today  → invalid
+    start_date.value = '';
+    return false;
   }
-}
+  return true;
+};
+
+/** Validate that due date exists, is a real date, and not before start date */
+const validateDueDate = (): boolean => {
+  const d = toDate(due_date.value);
+  if (!d) { due_date.value = ''; return false; }
+
+  const s = toDate(start_date.value);
+  if (s && lt(d, s)) {          // due < start   → invalid
+    due_date.value = '';
+    return false;
+  }
+
+  // If you ALSO want to forbid due dates in the past (even without start), uncomment:
+  // const today = startOfDay(new Date());
+  // if (lt(d, today)) { due_date.value = ''; return false; }
+
+  return true;
+};
+
 </script>

@@ -8,353 +8,329 @@ import CreateTaskModal from '@/components/CreateTaskModal.vue'
 import ViewTaskModal from '@/components/ViewTaskModal.vue'
 import EditTaskModal from '@/components/EditTaskModal.vue'
 
-const userRole = useAuthStore().role // simulate logged-in role
+const auth = useAuthStore()
+const userRole = auth.role
+const isAdminOrManager = computed(() => userRole === 'Admin' || userRole === 'Manager')
+
 const taskStore = useTaskStore()
 const userStore = useUserStore()
 const toast = useToastStore()
 const isModalOpen = ref(false)
 const isViewOpen = ref(false)
 const isEditOpen = ref(false)
-const selectedTask = ref({})
+const selectedTask = ref<any>({})
 
 onMounted(() => {
   taskStore.fetchTasks()
   userStore.fetchUsers()
 })
 
-// defineProps<{ searchQuery: string }>()
-
 const props = defineProps<{ searchQuery: string }>()
 
-const filteredTasks = computed(() =>
-  taskStore.tasks.filter(task =>
-    task.title.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
-    task.description.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
-    task.priority.toLowerCase().includes(props.searchQuery.toLowerCase())
-  )
-);
+const asString = (v: unknown): string =>
+  v == null ? "" : typeof v === "string" ? v : String(v);
+
+const lower = (v: unknown): string => asString(v).toLowerCase();
+
+// Build a safe lookup each time we filter (fast for typical sizes)
+const userById = computed(() => {
+  const map = new Map<string, any>();
+  const list = Array.isArray(userStore.users) ? userStore.users : [];
+  for (const u of list) map.set(String(u?.id), u);
+  return map;
+});
+
+const filteredTasks = computed(() => {
+  const q = lower(props.searchQuery).trim();
+  if (!q) return taskStore.tasks; // no search, return original
+
+  return taskStore.tasks.filter((t: any) => {
+    const u = userById.value.get(String(t?.assigned_to_id));
+
+    // normalize everything to strings before calling toLowerCase
+    const hay = [
+      lower(t?.title),
+      lower(t?.description),
+      lower(t?.priority),        // handles number/enums
+      lower(u?.name),            // assignee name
+      lower(u?.email),           // assignee email
+      lower(u?.role ?? u?.role_name) // assignee role
+    ].join(" ");
+
+    return hay.includes(q);
+  });
+});
+
+
+const statuses = ['Todo', 'In Progress', 'Done']
 
 const groupedTasks = computed(() => {
-  const statuses = ['Todo', 'In Progress', 'Done']
   const groups: Record<string, any[]> = {}
-
   statuses.forEach(status => {
     groups[status] = filteredTasks.value.filter(t => t.status === status)
   })
-
   return groups
 })
 
 const groupedPersonalTasks = computed(() => {
-  const statuses = ['Todo', 'In Progress', 'Done']
   const groups: Record<string, any[]> = {}
-
   statuses.forEach(status => {
-    groups[status] = filteredTasks.value.filter(t => t.status == status && t.assigned_to_id==useAuthStore().user?.id)
+    groups[status] = filteredTasks.value.filter(
+      t => t.status === status && t.assigned_to_id == auth.user?.id
+    )
   })
-
   return groups
 })
 
 
-const addTask = (task: any) => {
-  taskStore.addTask(task).then(() => {
-    toast.success('Task created successfully')
-    taskStore.fetchTasks()
-  })
+const addTask = async (task: any) => {
+  await taskStore.addTask(task)
+  toast.success('Task created successfully')
+  taskStore.fetchTasks()
 }
 
-function openCreateTask() {
-  isModalOpen.value = true
+function openCreateTask() { isModalOpen.value = true }
+const deleteTask = async (id: any) => {
+  await taskStore.removeTask(id)
+  taskStore.fetchTasks()
+  toast.success('Task deleted successfully')
 }
 
-const deleteTask = (id: any) => {
-  taskStore.removeTask(id).then(() => {
-    taskStore.fetchTasks()
-    toast.success('Task deleted successfully')
-  })
+function openViewTask(task: any) { selectedTask.value = task; isViewOpen.value = true }
+function openEditTask(task: any) { selectedTask.value = task; isEditOpen.value = true }
+
+const editTask = async (task: any) => {
+  await taskStore.editTask(task.id, task)
+  toast.success('Task updated successfully')
+  taskStore.fetchTasks()
 }
 
-
-function openViewTask(task:any) {
-  selectedTask.value = task
-  isViewOpen.value = true
-}
-
-function openEditTask(task:any) {
-  selectedTask.value = task
-  isEditOpen.value = true
-}
-
-const editTask = (task: any) => {
-  taskStore.editTask(task.id, task).then(() => {
-    toast.success('Task created successfully')
-    taskStore.fetchTasks()
-  })
-}
-
-const editStatus = (id: any, status: string) => {
+const editStatus = async (id: any, status: string) => {
   try {
-    taskStore.editTask(id, { 'status':status }).then(() => {
+    await taskStore.editTask(id, { status })
     toast.success(`Task status updated to ${status}`)
     taskStore.fetchTasks()
-  })
-  } catch (error:any) {
-    toast.error(error?.data?.message)
+  } catch (error: any) {
+    toast.error(error?.data?.message || 'Failed to update status')
   }
 }
 
-const editAssignee = (id: any, assigned_to_id: string) => {
-  const compatible = userStore.users.find(user => user.id == assigned_to_id).role_id == taskStore.tasks.find(task=> task.id == id).role_nature_id
-  // check if assignee has same role as nature of role
+const editAssignee = async (id: any, assigned_to_id: string) => {
+  const assignee = userStore.users.find(u => u.id == assigned_to_id)
+  const targetTask = taskStore.tasks.find(t => t.id == id)
+  const compatible = assignee && targetTask && assignee.role_id == targetTask.role_nature_id
   if (!compatible) {
     toast.error('Assignee does not have the same role as the task nature')
     taskStore.fetchTasks()
     return
   }
-  console.log(`Editing task ${id} assignee to ${assigned_to_id} and they are compatible: ${compatible}`)
-  taskStore.editTask(id, { 'assigned_to_id':assigned_to_id }).then(() => {
-    toast.success('Assignee edited successfuly')
-    taskStore.fetchTasks()
-  })
+  await taskStore.editTask(id, { assigned_to_id })
+  toast.success('Assignee edited successfully')
+  taskStore.fetchTasks()
 }
 
-const editPercentage = (id: any, percentage_completed: string, e:any) => {
-  if (percentage_completed == '100'){
-    editStatus(id, 'Done')
-    return  
-  }
-  taskStore.editTask(id, { 'percentage_completed':percentage_completed }).then(() => {
-    toast.success('Percentage completed edited successfuly')
-    e.target.blur() // remove focus from input
-    taskStore.fetchTasks()
-  })
+const editPercentage = async (id: any, percentage_completed: string, e: any) => {
+  if (percentage_completed == '100') { await editStatus(id, 'Done'); return }
+  await taskStore.editTask(id, { percentage_completed })
+  toast.success('Percentage completed edited successfully')
+  e?.target?.blur?.()
+  taskStore.fetchTasks()
 }
 
 const statusOptions = ['Todo', 'In Progress', 'Done']
 
+const isNew = (createdAt: string | number | Date) => {
+  const twoDays = 2 * 24 * 60 * 60 * 1000
+  return Date.now() - twoDays < new Date(createdAt).getTime()
+}
+
+const displayStart = (task: any) => task?.start_date ?? '—'
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4">Tasks</h1>
+    <h1 class="mb-4 text-2xl font-bold">Tasks</h1>
 
-    <div class="mb-4" v-if="userRole== 'Admin' || userRole == 'Manager'">
-      <button @click="openCreateTask" class="bg-blue-500 text-white px-4 py-2 rounded">Create Task</button>
+    <!-- Create -->
+    <div class="mb-4 flex justify-end" v-if="isAdminOrManager">
+      <button @click="openCreateTask" class="rounded bg-blue-500 px-4 py-2 text-white">Create Task</button>
     </div>
-    <div v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'" class="space-y-6">
-      <div v-for="status in statusOptions" :key="status">
-        <h2 class="text-lg font-bold mb-2 text-md">{{ status }}</h2>
 
-        <div v-if="groupedTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-md text-gray-500">
-          No {{ status }} tasks
-        </div>
+    <!-- One loop, table per status; rows depend on role -->
+    <div class="space-y-8">
+      <div v-for="status in statusOptions" :key="status" class="space-y-3">
+        <h2 class="text-md mb-2 text-lg font-bold">{{ status }}</h2>
 
-        <div
-          v-for="task in groupedTasks[status]"
-          :key="task.id"
-          class="grid grid-cols-5 bg-white p-3 rounded shadow mb-2"
-        >
-          <!-- title -->
-          <div class="flex items-center space-x-2">
-            <span @click="openViewTask(task)" class="cursor-pointer text-md">{{ task.title }}</span>
-            <span
-              v-if="new Date(Date.now() - 2*24*60*60*1000) < new Date(task.createdAt)"
-              class="bg-green-500 text-white px-1 py-[.5px] text-[9px] rounded-lg block flex items-center"
-            >
-              new
-            </span>
+        <template v-if="(isAdminOrManager ? groupedTasks[status] : groupedPersonalTasks[status]).length === 0">
+          <div class="rounded bg-gray-50 p-3 text-md text-gray-500">No {{ status }} tasks</div>
+        </template>
+
+        <template v-else>
+          <!-- Scrollable container (non-sticky header) -->
+          <div class="relative max-h-[70vh] overflow-x-auto overflow-y-auto rounded border border-gray-200 bg-white">
+            <table class="min-w-full text-sm">
+              <!-- NON-STICKY thead -->
+              <thead class="bg-gray-50 text-gray-600">
+                <tr class="text-left">
+                  <th class="px-4 py-3 font-semibold">Title</th>
+                  <th v-if="isAdminOrManager" class="px-4 py-3 font-semibold">Assignee</th>
+                  <th class="px-4 py-3 font-semibold">Start date</th>
+                  <th class="px-4 py-3 font-semibold">Due date</th>
+                  <th class="px-4 py-3 font-semibold">Priority</th>
+                  <th class="px-4 py-3 font-semibold">Status</th>
+                  <th class="px-4 py-3 font-semibold">% Done</th>
+                  <th class="px-4 py-3 text-right font-semibold">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="task in (isAdminOrManager ? groupedTasks[status] : groupedPersonalTasks[status])"
+                  :key="task.id"
+                  class="odd:bg-white even:bg-gray-50 hover:bg-black/[0.03]"
+                >
+                  <!-- Title + "new" badge -->
+                  <td class="px-4 py-3 align-middle">
+                    <div class="flex items-center gap-2">
+                      <span
+                        @click="openViewTask(task)"
+                        class="cursor-pointer text-[15px] font-medium text-gray-900 hover:underline"
+                      >
+                        {{ task.title }}
+                      </span>
+                      <span
+                        v-if="isNew(task.createdAt)"
+                        class="rounded bg-green-500 px-1 py-[2px] text-[10px] text-white"
+                      >
+                        new
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Assignee (Admin/Manager only) -->
+                  <td v-if="isAdminOrManager" class="px-4 py-3 align-middle">
+                    <div class="flex items-center gap-2">
+                      <select
+                        v-model="task.assigned_to_id"
+                        class="rounded border p-2 text-sm"
+                        @change="editAssignee(task.id, task.assigned_to_id)"
+                      >
+                        <option value="">--Select User--</option>
+                        <option v-for="user in userStore.users" :key="user.id" :value="user.id">
+                          {{ user.name }}
+                        </option>
+                      </select>
+                    </div>
+                  </td>
+
+                  <!-- Start date -->
+                  <td class="px-4 py-3 align-middle">
+                    <span class="text-sm">{{ displayStart(task) }}</span>
+                  </td>
+
+                  <!-- Due date -->
+                  <td class="px-4 py-3 align-middle">
+                    <span class="text-sm">{{ task.due_date }}</span>
+                  </td>
+
+                  <!-- Priority (no 'priority' word) -->
+                  <td class="px-4 py-3 align-middle">
+                    <span
+                      class="rounded-lg px-2 py-1 text-[10px] text-white"
+                      :class="{
+                        'bg-red-500': task.priority === 'High',
+                        'bg-yellow-500': task.priority === 'Medium',
+                        'bg-green-500': task.priority === 'Low'
+                      }"
+                    >
+                      {{ task.priority }}
+                    </span>
+                  </td>
+
+                  <!-- Status -->
+                  <td class="px-4 py-3 align-middle">
+                    <select
+                      v-model="task.status"
+                      class="rounded border p-2 text-sm"
+                      @change="editStatus(task.id, task.status)"
+                    >
+                      <option value="">--Select Status--</option>
+                      <option v-for="option in statusOptions" :key="option" :value="option">
+                        {{ option }}
+                      </option>
+                    </select>
+                  </td>
+
+                  <!-- % Done -->
+                  <td class="px-4 py-3 align-middle">
+                    <input
+                      type="number"
+                      v-model="task.percentage_completed"
+                      class="w-16 rounded border p-2 text-right text-sm"
+                      :disabled="task.status === 'Todo' || task.status === 'Done'"
+                      @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
+                    />
+                  </td>
+
+                  <!-- Actions (icons only, no borders) -->
+                  <td class="px-4 py-3 align-middle">
+                    <div class="flex items-center justify-end gap-2">
+                      <!-- View (blue) -->
+                      <button
+                        @click="openViewTask(task)"
+                        class="rounded p-2 hover:bg-black/[0.04]"
+                        title="View"
+                        aria-label="View"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </button>
+
+                      <!-- Edit (amber) -->
+                      <button
+                        v-if="isAdminOrManager"
+                        @click="openEditTask(task)"
+                        class="rounded p-2 hover:bg-black/[0.04]"
+                        title="Edit"
+                        aria-label="Edit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 20h9"/>
+                          <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                        </svg>
+                      </button>
+
+                      <!-- Delete (red) -->
+                      <button
+                        v-if="isAdminOrManager"
+                        @click="deleteTask(task.id)"
+                        class="rounded p-2 hover:bg-red-50"
+                        title="Delete"
+                        aria-label="Delete"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M3 6h18"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          <path d="M10 11v6"/>
+                          <path d="M14 11v6"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-
-          <!-- assignee -->
-          <div class="flex items-center justify-end">
-            <span
-              v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
-              @click="openViewTask(task)"
-              class="cursor-pointer rounded text-sm p-1"
-            >
-              Assigned to:
-            </span>
-            <select
-              v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
-              v-model="task.assigned_to_id"
-              class="border p-2 rounded text-sm"
-              @change="editAssignee(task.id, task.assigned_to_id)"
-            >
-              <option value="">--Select User--</option>
-              <option
-                v-for="user in userStore.users"
-                :key="user.id"
-                :value="user.id"
-              >
-                {{ user.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- due date -->
-          <div class="flex items-center justify-end">
-            <span class="rounded text-sm p-2">Due date : {{ task.due_date }}</span>
-          </div>
-
-          <!-- actions -->
-          <div class="flex space-x-2 items-center justify-end col-span-2">
-            <span
-              class="rounded-lg text-white text-[9px] px-2 py-1"
-              :class="{
-                'bg-red-500': task.priority === 'High',
-                'bg-yellow-500': task.priority === 'Medium',
-                'bg-green-500': task.priority === 'Low'
-              }"
-            >
-              {{ task.priority }} priority
-            </span>
-
-            <select
-              v-model="task.status"
-              class="border p-2 rounded text-sm"
-              @change="editStatus(task.id, task.status)"
-            >
-              <option value="">--Select Status--</option>
-              <option v-for="option in statusOptions" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
-
-            <input
-              type="number"
-              v-model="task.percentage_completed"
-              class="border p-2 rounded text-sm w-10"
-              :disabled="task.status == 'Todo' || task.status == 'Done'"
-              @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
-            />
-
-            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-sm p-2">View</button>
-            <button @click="openEditTask(task)" class="border border-1 border-green rounded text-sm p-2">Edit</button>
-            <button
-              @click="deleteTask(task.id)"
-              v-if="userRole == 'Admin' || userRole == 'Manager'"
-              class="border border-1 border-green rounded text-sm p-2"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+        </template>
       </div>
     </div>
 
-    <div v-if="!(userRole == 'Admin' || userRole == 'Manager')" class="space-y-6">
-      <div v-for="status in statusOptions" :key="status">
-        <h2 class="text-lg font-bold mb-2 text-md">{{ status }}</h2>
-
-        <div v-if="groupedPersonalTasks[status].length === 0" class="bg-gray-50 p-3 rounded text-md text-gray-500">
-          No {{ status }} tasks
-        </div>
-
-        <div
-          v-for="task in groupedPersonalTasks[status]"
-          :key="task.id"
-          class="grid grid-cols-5 bg-white p-3 rounded shadow mb-2"
-        >
-          <!-- title -->
-          <div class="flex items-center space-x-2">
-            <span @click="openViewTask(task)" class="cursor-pointer text-md">{{ task.title }}</span>
-            <span
-              v-if="new Date(Date.now() - 2*24*60*60*1000) < new Date(task.createdAt)"
-              class="bg-green-500 text-white px-1 py-[.5px] text-[9px] rounded-lg block flex items-center"
-            >
-              new
-            </span>
-          </div>
-
-          <!-- assignee -->
-          <div class="flex items-center justify-end">
-            <span
-              v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
-              @click="openViewTask(task)"
-              class="cursor-pointer rounded text-sm p-1"
-            >
-              Assigned to:
-            </span>
-            <select
-              v-if="useAuthStore().role == 'Admin' || useAuthStore().role == 'Manager'"
-              v-model="task.assigned_to_id"
-              class="border p-2 rounded text-sm"
-              @change="editAssignee(task.id, task.assigned_to_id)"
-            >
-              <option value="">--Select User--</option>
-              <option
-                v-for="user in userStore.users"
-                :key="user.id"
-                :value="user.id"
-              >
-                {{ user.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- due date -->
-          <div class="flex items-center justify-end">
-            <span class="rounded text-sm p-2">Due date : {{ task.due_date }}</span>
-          </div>
-
-          <!-- actions -->
-          <div class="flex space-x-2 items-center justify-end col-span-2">
-            <span
-              class="rounded-lg text-white text-[9px] px-2 py-1"
-              :class="{
-                'bg-red-500': task.priority === 'High',
-                'bg-yellow-500': task.priority === 'Medium',
-                'bg-green-500': task.priority === 'Low'
-              }"
-            >
-              {{ task.priority }} priority
-            </span>
-
-            <select
-              v-model="task.status"
-              class="border p-2 rounded text-sm"
-              @change="editStatus(task.id, task.status)"
-            >
-              <option value="">--Select Status--</option>
-              <option v-for="option in statusOptions" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
-
-            <input
-              type="number"
-              v-model="task.percentage_completed"
-              class="border p-2 rounded text-sm w-10"
-              :disabled="task.status == 'Todo' || task.status == 'Done'"
-              @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
-            />
-
-            <button @click="openViewTask(task)" class="border border-1 border-green rounded text-sm p-2">View</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Modal -->
-    <CreateTaskModal
-      :isOpen="isModalOpen"
-      @close="isModalOpen = false"
-      @taskCreated="addTask"
-    />
-
-    <EditTaskModal
-      :isOpen="isEditOpen"
-      :task="selectedTask"
-      @close="isEditOpen = false"
-      @updateTask="editTask"
-    />
-
-    <ViewTaskModal
-      :isOpen="isViewOpen"
-      :task="selectedTask"
-      @close="isViewOpen = false"
-    />
+    <!-- Modals -->
+    <CreateTaskModal :isOpen="isModalOpen" @close="isModalOpen = false" @taskCreated="addTask" />
+    <EditTaskModal :isOpen="isEditOpen" :task="selectedTask" @close="isEditOpen = false" @updateTask="editTask" />
+    <ViewTaskModal :isOpen="isViewOpen" :task="selectedTask" @close="isViewOpen = false" />
   </div>
 </template>
