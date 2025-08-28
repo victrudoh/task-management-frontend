@@ -61,7 +61,6 @@ const filteredTasks = computed(() => {
   });
 });
 
-
 const statuses = ['Todo', 'In Progress', 'Done']
 
 const groupedTasks = computed(() => {
@@ -81,7 +80,6 @@ const groupedPersonalTasks = computed(() => {
   })
   return groups
 })
-
 
 const addTask = async (task: any) => {
   await taskStore.addTask(task)
@@ -130,6 +128,11 @@ const editAssignee = async (id: any, assigned_to_id: string) => {
 }
 
 const editPercentage = async (id: any, percentage_completed: string, e: any) => {
+  if (isNaN(Number(percentage_completed)) || Number(percentage_completed) < 0 || Number(percentage_completed) > 100) {
+    toast.error('Percentage completed must be a number between 0 and 100')
+    taskStore.fetchTasks()
+    return
+  }
   if (percentage_completed == '100') { await editStatus(id, 'Done'); return }
   await taskStore.editTask(id, { percentage_completed })
   toast.success('Percentage completed edited successfully')
@@ -145,15 +148,27 @@ const isNew = (createdAt: string | number | Date) => {
 }
 
 const displayStart = (task: any) => task?.start_date ?? '—'
+
+// ===== Equal-width columns (auto 7/8) =====
+const totalCols = computed(() => (isAdminOrManager.value ? 8 : 7))
+const colWidth = computed(() => `${(100 / totalCols.value).toFixed(6)}%`)
 </script>
 
 <template>
   <div>
-    <h1 class="mb-4 text-2xl font-bold">Tasks</h1>
-
-    <!-- Create -->
-    <div class="mb-4 flex justify-end" v-if="isAdminOrManager">
-      <button @click="openCreateTask" class="rounded bg-blue-500 px-4 py-2 text-white">Create Task</button>
+    <!-- Header -->
+    <div class="mb-10 mt-5 flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Tasks</h1>
+      <button
+        v-if="isAdminOrManager"
+        @click="openCreateTask"
+        class="rounded bg-blue-500 px-4 py-2 text-sm font-medium text-white"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="mr-1 inline h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 5a1 1 0 0 1 1 1v3h3a1 1 0 1 1 0 2h-3v3a1 1 0 1 1-2 0v-3H6a1 1 0 1 1 0-2h3V6a1 1 0 0 1 1-1z" clip-rule="evenodd" />
+        </svg>
+        Create Task
+      </button>
     </div>
 
     <!-- One loop, table per status; rows depend on role -->
@@ -168,18 +183,18 @@ const displayStart = (task: any) => task?.start_date ?? '—'
         <template v-else>
           <!-- Scrollable container (non-sticky header) -->
           <div class="relative max-h-[70vh] overflow-x-auto overflow-y-auto rounded border border-gray-200 bg-white">
-            <table class="min-w-full text-sm">
+            <table class="min-w-full table-fixed text-sm">
               <!-- NON-STICKY thead -->
               <thead class="bg-gray-50 text-gray-600">
                 <tr class="text-left">
-                  <th class="px-4 py-3 font-semibold">Title</th>
-                  <th v-if="isAdminOrManager" class="px-4 py-3 font-semibold">Assignee</th>
-                  <th class="px-4 py-3 font-semibold">Start date</th>
-                  <th class="px-4 py-3 font-semibold">Due date</th>
-                  <th class="px-4 py-3 font-semibold">Priority</th>
-                  <th class="px-4 py-3 font-semibold">Status</th>
-                  <th class="px-4 py-3 font-semibold">% Done</th>
-                  <th class="px-4 py-3 text-right font-semibold">Actions</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Title</th>
+                  <th v-if="isAdminOrManager" class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Assignee</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Start date</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Due date</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Priority</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Status</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">% Done</th>
+                  <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Actions</th>
                 </tr>
               </thead>
 
@@ -190,7 +205,7 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                   class="odd:bg-white even:bg-gray-50 hover:bg-black/[0.03]"
                 >
                   <!-- Title + "new" badge -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle truncate whitespace-nowrap overflow-hidden" :style="{ width: colWidth }">
                     <div class="flex items-center gap-2">
                       <span
                         @click="openViewTask(task)"
@@ -208,11 +223,11 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                   </td>
 
                   <!-- Assignee (Admin/Manager only) -->
-                  <td v-if="isAdminOrManager" class="px-4 py-3 align-middle">
+                  <td v-if="isAdminOrManager" class="px-4 py-3 align-middle" :style="{ width: colWidth }">
                     <div class="flex items-center gap-2">
                       <select
                         v-model="task.assigned_to_id"
-                        class="rounded border p-2 text-sm"
+                        class="w-full rounded border p-2 text-sm"
                         @change="editAssignee(task.id, task.assigned_to_id)"
                       >
                         <option value="">--Select User--</option>
@@ -224,17 +239,17 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                   </td>
 
                   <!-- Start date -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle truncate whitespace-nowrap overflow-hidden" :style="{ width: colWidth }">
                     <span class="text-sm">{{ displayStart(task) }}</span>
                   </td>
 
                   <!-- Due date -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle truncate whitespace-nowrap overflow-hidden" :style="{ width: colWidth }">
                     <span class="text-sm">{{ task.due_date }}</span>
                   </td>
 
                   <!-- Priority (no 'priority' word) -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle" :style="{ width: colWidth }">
                     <span
                       class="rounded-lg px-2 py-1 text-[10px] text-white"
                       :class="{
@@ -248,10 +263,10 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                   </td>
 
                   <!-- Status -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle" :style="{ width: colWidth }">
                     <select
                       v-model="task.status"
-                      class="rounded border p-2 text-sm"
+                      class="w-full rounded border p-2 text-sm"
                       @change="editStatus(task.id, task.status)"
                     >
                       <option value="">--Select Status--</option>
@@ -262,29 +277,29 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                   </td>
 
                   <!-- % Done -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle" :style="{ width: colWidth }">
                     <input
                       type="number"
                       v-model="task.percentage_completed"
-                      class="w-16 rounded border p-2 text-right text-sm"
+                      class="w-full rounded border p-2 text-left text-sm"
                       :disabled="task.status === 'Todo' || task.status === 'Done'"
                       @keyup.enter="editPercentage(task.id, task.percentage_completed, $event)"
                     />
                   </td>
 
                   <!-- Actions (icons only, no borders) -->
-                  <td class="px-4 py-3 align-middle">
+                  <td class="px-4 py-3 align-middle" :style="{ width: colWidth }">
                     <div class="flex items-center justify-end gap-2">
                       <!-- View (blue) -->
                       <button
                         @click="openViewTask(task)"
-                        class="rounded p-2 hover:bg-black/[0.04]"
+                        class="rounded p-2 hover:bg-black/[0.04] text-blue-600"
                         title="View"
                         aria-label="View"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
-                          <circle cx="12" cy="12" r="3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <rect width="24" height="24" fill="none" />
+                          <path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h6q.425 0 .713.288T12 4t-.288.713T11 5H5v14h14v-6q0-.425.288-.712T20 12t.713.288T21 13v6q0 .825-.587 1.413T19 21zM19 6.4L10.4 15q-.275.275-.7.275T9 15t-.275-.7t.275-.7L17.6 5H15q-.425 0-.712-.288T14 4t.288-.712T15 3h5q.425 0 .713.288T21 4v5q0 .425-.288.713T20 10t-.712-.288T19 9z" />
                         </svg>
                       </button>
 
@@ -306,7 +321,7 @@ const displayStart = (task: any) => task?.start_date ?? '—'
                       <button
                         v-if="isAdminOrManager"
                         @click="deleteTask(task.id)"
-                        class="rounded p-2 hover:bg-red-50"
+                        class="rounded p-2 hover:bg-red-500/10"
                         title="Delete"
                         aria-label="Delete"
                       >

@@ -37,10 +37,12 @@ const deleteRole = (id: any) => {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4">Roles</h1>
+    <div class="flex justify-between mb-10 mt-5">
+      <h1 class="text-2xl font-bold">Roles</h1>
 
-    <div class="mb-4" v-if="userRole== 'Admin' || userRole == 'Manager'">
+    <div class="" v-if="userRole== 'Admin' || userRole == 'Manager'">
       <button @click="isModalOpen = true" class="bg-blue-500 text-white px-4 py-2 rounded">Create Role</button>
+    </div>
     </div>
 
     <ul class="space-y-2">

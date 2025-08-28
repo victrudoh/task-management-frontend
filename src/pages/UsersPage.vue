@@ -50,7 +50,7 @@ console.log(new Date (Date.now()-7*24*60*60*1000) > new Date('2025-08-10T09:56:2
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4">Users</h1>
+    <h1 class="text-2xl font-bold mb-10 mt-5">Users</h1>
     <!-- use grid form -->
       
     <div class="grid grid-cols-1 bg-white p-3 rounded shadow" v-if="filteredUsers.length == 0">

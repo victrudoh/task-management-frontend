@@ -21,7 +21,7 @@ const routes: Array<RouteRecordRaw> = [
     component: DashboardLayout,
     children: [
       {
-        path: '',
+        path: 'home',
         name: 'Dashboard',
         component: DashboardPage,
         // meta: { roles : ['admin', 'manager', 'employee'] } // restrict to certain roles

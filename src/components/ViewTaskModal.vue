@@ -43,14 +43,6 @@
 
             <!-- Body (scrollable) -->
             <div class="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4">
-              <div>
-                <p class="text-sm text-gray-600">
-                  <span class="font-medium text-gray-800">Description:</span>
-                </p>
-                <p class="text-gray-700 bg-gray-50 p-3 rounded-md">
-                  {{ task.description }}
-                </p>
-              </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div class="text-sm text-gray-600">
@@ -75,12 +67,20 @@
                   <span class="font-medium text-gray-800">Status:</span>
                   <p class="text-gray-700">{{ task.status }}</p>
                 </div>
-                <div class="text-sm text-gray-600 col-span-2">
+                <div class="text-sm text-gray-600">
                   <span class="font-medium text-gray-800">Role Attached:</span>
                   <p class="text-gray-700">
                     {{ useRoleStore().roles.find(role => role.id == task.role_nature_id).name }}
                   </p>
                 </div>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">
+                  <span class="font-medium text-gray-800">Description:</span>
+                </p>
+                <p class="text-gray-700 bg-gray-50 p-3 rounded-md">
+                  {{ task.description }}
+                </p>
               </div>
             </div>
 
