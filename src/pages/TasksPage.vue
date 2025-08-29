@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/authStore'
 import { useTaskStore } from '@/store/taskStore'
 import { useUserStore } from '@/store/userStore'
@@ -152,6 +153,41 @@ const displayStart = (task: any) => task?.start_date ?? '—'
 // ===== Equal-width columns (auto 7/8) =====
 const totalCols = computed(() => (isAdminOrManager.value ? 8 : 7))
 const colWidth = computed(() => `${(100 / totalCols.value).toFixed(6)}%`)
+
+const route = useRoute();
+const router = useRouter();
+
+// highlight support (optional)
+const highlightedId = computed(() => String(route.query.taskId || ''));
+
+// open from deep link
+async function openFromQuery() {
+  const qId = route.query.taskId;
+  if (!qId) return;
+
+  // ensure tasks are loaded
+  if (!Array.isArray(taskStore.tasks) || !taskStore.tasks.length) {
+    await taskStore.fetchTasks();
+  }
+  const idStr = String(qId);
+  const task = taskStore.tasks.find((t: any) => String(t.id) === idStr);
+  if (task) {
+    openViewTask(task);
+    // optionally scroll the row into view after next paint
+    // requestAnimationFrame(() => {
+    //   const el = document.querySelector(`[data-task-row="${idStr}"]`);
+    //   el?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    // });
+  }
+
+  // clean up the query so refreshes don’t reopen
+  router.replace({ query: { ...route.query, taskId: undefined, open: undefined } });
+}
+
+// run on first mount and whenever the query changes
+watch(() => route.query.taskId, () => { openFromQuery(); });
+onMounted(() => { openFromQuery(); });
+
 </script>
 
 <template>
@@ -184,7 +220,6 @@ const colWidth = computed(() => `${(100 / totalCols.value).toFixed(6)}%`)
           <!-- Scrollable container (non-sticky header) -->
           <div class="relative max-h-[70vh] overflow-x-auto overflow-y-auto rounded border border-gray-200 bg-white">
             <table class="min-w-full table-fixed text-sm">
-              <!-- NON-STICKY thead -->
               <thead class="bg-gray-50 text-gray-600">
                 <tr class="text-left">
                   <th class="px-4 py-3 font-semibold" :style="{ width: colWidth }">Title</th>
@@ -202,7 +237,9 @@ const colWidth = computed(() => `${(100 / totalCols.value).toFixed(6)}%`)
                 <tr
                   v-for="task in (isAdminOrManager ? groupedTasks[status] : groupedPersonalTasks[status])"
                   :key="task.id"
+                  :data-task-row="task.id"
                   class="odd:bg-white even:bg-gray-50 hover:bg-black/[0.03]"
+                  :class="String(task.id) === highlightedId ? 'ring-2 ring-blue-400 ring-offset-1' : ''"
                 >
                   <!-- Title + "new" badge -->
                   <td class="px-4 py-3 align-middle truncate whitespace-nowrap overflow-hidden" :style="{ width: colWidth }">
@@ -289,7 +326,7 @@ const colWidth = computed(() => `${(100 / totalCols.value).toFixed(6)}%`)
 
                   <!-- Actions (icons only, no borders) -->
                   <td class="px-4 py-3 align-middle" :style="{ width: colWidth }">
-                    <div class="flex items-center justify-end gap-2">
+                    <div class="flex items-center justify-start gap-2">
                       <!-- View (blue) -->
                       <button
                         @click="openViewTask(task)"

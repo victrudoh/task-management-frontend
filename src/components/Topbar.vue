@@ -20,6 +20,7 @@
           <span class="text-gray-700 font-bold text-[10px] underline underline-offset-1">{{ authStore.role }}</span>
         </div>
       </div>
+      <NotificationBell />
       <button @click="logout" class="bg-blue-500 text-white px-3 py-1 rounded">
         Logout
       </button>
@@ -31,6 +32,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
+import NotificationBell from './notificationBell.vue';
 
 const authStore = useAuthStore();
 const userName = ref('User');

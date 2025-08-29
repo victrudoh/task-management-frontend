@@ -156,3 +156,12 @@ select {
   background-size: 12px; /* Arrow size */
   /* padding-right: 20px; Space for the arrow */
 }
+
+select{
+  /* @apply w-[150px] */
+    /* make long text behave */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  @apply pe-5
+}
