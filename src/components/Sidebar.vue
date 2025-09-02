@@ -5,7 +5,7 @@
     </router-link>
     <nav>
         <div>
-            <router-link to="/dashboard" class="block p-2 hover:bg-gray-200 rounded">
+            <router-link to="/dashboard/home" class="block p-2 hover:bg-gray-200 rounded">
               Overview
             </router-link>
             <router-link to="/dashboard/tasks" class="block p-2 hover:bg-gray-200 rounded">

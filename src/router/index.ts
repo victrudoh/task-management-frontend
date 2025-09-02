@@ -11,17 +11,19 @@ import Tasks from '@/pages/TasksPage.vue'
 import Settings from '@/pages/SettingsPage.vue'
 import Roles from '@/pages/RolesPage.vue'
 import Users from '@/pages/UsersPage.vue'
+import Notifications from '@/pages/Notifications.vue';
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', name: 'Landing', component: LandingPage },
   { path: '/login', name: 'Login', component: LoginPage, meta: {guestOnly: true} },
   { path: '/register', name: 'Register', component: RegisterPage, meta: {guestOnly: true} },
+  { path: '/notifications', name: 'Notifications', component: Notifications },
   {
     path: '/dashboard',
     component: DashboardLayout,
     children: [
       {
-        path: '',
+        path: 'home',
         name: 'Dashboard',
         component: DashboardPage,
         // meta: { roles : ['admin', 'manager', 'employee'] } // restrict to certain roles

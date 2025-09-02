@@ -43,18 +43,7 @@
                   v-model="title"
                   type="text"
                   required
-                    class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  v-model="description"
-                  rows="4"
-                    class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                    class="border p-2 w-full mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                 />
               </div>
 
@@ -65,7 +54,7 @@
                   </label>
                   <select
                     v-model="priority"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   >
                     <option value="">--Select--</option>
                     <option value="Low">Low</option>
@@ -74,17 +63,31 @@
                   </select>
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    Deadline
-                  </label>
-                  <input
-                    v-model="due_date"
-                    type="date"
-                    required
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
-                    @change="validateDate"
-                  />
+                <div class="flex space-x-4">
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Start Date
+                    </label>
+                    <input
+                      v-model="start_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateStartDate()"
+                    />
+                  </div>
+                  <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Deadline
+                    </label>
+                    <input
+                      v-model="due_date"
+                      type="date"
+                      required
+                        class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      @change="validateDueDate()"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -95,7 +98,7 @@
                   </label>
                   <select
                     v-model="role_nature_id"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                     @change="checkAssignee()"
                   >
                     <option value="">--Select--</option>
@@ -111,7 +114,7 @@
                   </label>
                   <select
                     v-model="assigned_to_id"
-                      class="border p-2 w-full mb-4 mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                      class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                   >
                     <option value="">--Select--</option>
                     <option v-for="user in userStore.users" :key="user.id" :value="user.id">
@@ -121,8 +124,19 @@
                 </div>
               </div>
 
+              <!-- Description -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  v-model="description"
+                  rows="10"
+                  style="resize: none"
+                  class="border p-2 w-full block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
+                />
+              </div>
+
               <!-- Actions -->
-              <div class="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white">
+              <div class="pt-6 flex justify-end gap-3">
                 <button
                   type="button"
                   @click="closeModal"
@@ -169,6 +183,7 @@ const emits = defineEmits(['close', 'taskCreated'])
 
 const title = ref('')
 const description = ref('')
+const start_date = ref('')
 const due_date = ref('')
 const priority = ref('')
 const assigned_to_id = ref('')
@@ -190,6 +205,7 @@ const createTask = () => {
   const newTask = {
     title: title.value,
     description: description.value,
+    start_date: start_date.value,
     due_date: due_date.value,
     priority: priority.value,
     assigned_to_id: assigned_to_id.value, // Default to
@@ -205,6 +221,7 @@ const createTask = () => {
   // Reset fields
   title.value = ''
   description.value = ''
+  start_date.value = ''
   due_date.value = ''
   priority.value = ''
   assigned_to_id.value = ''
@@ -215,6 +232,7 @@ const allFieldsFilled = computed(() => {
   return (
     title.value.trim() !== "" &&
     description.value.trim() !== "" &&
+    start_date.value !== "" &&
     due_date.value !== "" &&
     priority.value !== "" &&
     assigned_to_id.value !== ""
@@ -232,9 +250,44 @@ const checkAssignee = () => {
   }
 }
 
-const validateDate = () =>{
-  if (new Date (Date.now()) > new Date(due_date.value)){
-    due_date.value = ""
+/** Helpers */
+const toDate = (v: unknown): Date | null => {
+  if (!v) return null;
+  const s = String(v);
+  // Handle "YYYY-MM-DD" safely (avoid timezone surprises)
+  const d = new Date(s.includes('T') ? s : `${s}T00:00:00`);
+  return isNaN(d.getTime()) ? null : d;
+};
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const lt = (a: Date, b: Date) => startOfDay(a).getTime() < startOfDay(b).getTime();
+
+/** Validate that start date exists, is a real date, and not in the past */
+const validateStartDate = (): boolean => {
+  const s = toDate(start_date.value);
+  if (!s) { start_date.value = ''; return false; }
+
+  const today = startOfDay(new Date());
+  if (lt(s, today)) {           // start < today  → invalid
+    start_date.value = '';
+    return false;
   }
-}
+  return true;
+};
+
+/** Validate that due date exists, is a real date, and not before start date */
+const validateDueDate = (): boolean => {
+  const d = toDate(due_date.value);
+  if (!d) { due_date.value = ''; return false; }
+
+  const s = toDate(start_date.value);
+  if (s && lt(d, s)) {          // due < start   → invalid
+    due_date.value = '';
+    return false;
+  }
+
+  const today = startOfDay(new Date());
+  if (lt(d, today)) { due_date.value = ''; return false; }
+
+  return true;
+};
 </script>

@@ -60,7 +60,7 @@ onMounted(()=>{
 })
 
 async function handleRegister() {
-  await auth.register({ name: name.value, email: email.value, password: password.value });
+  await auth.register({ name: name.value, email: email.value, password: password.value, role_id: Number(role_id.value) });
   if (auth.token) router.push({ name: 'Dashboard' });
 }
 </script>

@@ -39,7 +39,7 @@ const passwordChanged = () => {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4">Settings</h1>
+    <h1 class="text-2xl font-bold mb-10 mt-5">Settings</h1>
 
     <div class="bg-white p-4 rounded shadow">
       <label class="block text-sm font-medium text-gray-700">Name</label>
