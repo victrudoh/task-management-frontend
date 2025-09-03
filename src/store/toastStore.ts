@@ -3,7 +3,7 @@ import { defineStore } from "pinia"
 
 export const useToastStore = defineStore("toast", {
   state: () => ({
-    toasts: [] // { id, type, message }
+    toasts: [] as any// { id, type, message }
   }),
   actions: {
     addToast(type:any, message:any, duration = 5000) {
@@ -15,7 +15,7 @@ export const useToastStore = defineStore("toast", {
       }, duration)
     },
     removeToast(id:any) {
-      this.toasts = this.toasts.filter(t => t.id !== id)
+      this.toasts = this.toasts.filter((x:any) => x.id !== id)
     },
     success(message:any) {
       this.addToast("success", message)
