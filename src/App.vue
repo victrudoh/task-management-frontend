@@ -4,5 +4,5 @@
 </template>
 
 <script setup>
- import ToastContainer from '@/components/ToastContainer.vue'
+ import ToastContainer from '@/components/toastContainer.vue'
 </script>

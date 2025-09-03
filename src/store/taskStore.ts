@@ -21,10 +21,10 @@ export const useTaskStore = defineStore('taskStore', () => {
     }
   }
 
-  async function fetchmyTasks(userId: number) {
+  async function fetchmyTasks() {
     loading.value = true
     try {
-      const res = await getUserTasks(userId)
+      const res = await getUserTasks()
       tasks.value = res.data
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch tasks'

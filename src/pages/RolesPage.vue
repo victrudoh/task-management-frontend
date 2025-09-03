@@ -8,7 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 const auth = useAuthStore()
 const userRole = auth.role
-const isAdminOrManager = computed(() => userRole === 'Admin' || userRole === 'Manager')
+// const isAdminOrManager = computed(() => userRole === 'Admin' || userRole === 'Manager')
 const isAdmin = computed(() => userRole === 'Admin')
 
 const roleStore = useRoleStore()
