@@ -1,5 +1,8 @@
 # Build stage
-FROM node:20-alpine as build
+FROM node:20-slim as build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y python3 make g++
 
 WORKDIR /app
 
@@ -8,7 +11,8 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 
 # Install dependencies (including devDependencies for building)
-RUN npm ci
+# Use full install so optional platform binaries like rollup are included
+RUN npm install
 
 # Copy project files
 COPY . .
@@ -17,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:stable-alpine as production
+FROM nginx:stable as production
 
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
