@@ -23,10 +23,10 @@
         <input v-model="name" placeholder="Name" class="w-full border p-2 mb-3 rounded" required />
         <input v-model="email" type="email" placeholder="Email" class="w-full border p-2 mb-3 rounded" required />
         <input v-model="password" type="password" placeholder="Password" class="w-full border p-2 mb-3 rounded" required />
-        <select v-model="role_id" class="w-full border p-2 mb-3 rounded" required>
+        <!-- <select v-model="role_id" class="w-full border p-2 mb-3 rounded" required>
             <option value="" disabled selected>Select Role</option>
             <option v-for="role in roleStore.roles" :key="role.id" :value="role.id">{{role.name}}</option>
-        </select>
+        </select> -->
 
         <button
             type="submit"
@@ -53,14 +53,13 @@ const router = useRouter();
 const name = ref('');
 const email = ref('');
 const password = ref('');
-const role_id = ref('');
 
 onMounted(()=>{
   roleStore.fetchRoles()
 })
 
 async function handleRegister() {
-  await auth.register({ name: name.value, email: email.value, password: password.value, role_id: Number(role_id.value) });
+  await auth.register({ name: name.value, email: email.value, password: password.value});
   if (auth.token) router.push({ name: 'Dashboard' });
 }
 </script>

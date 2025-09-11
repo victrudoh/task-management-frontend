@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const res = await apiRegister(payload);
         this.token = res.data.token;
-        this.user = {id:res.data.id, name: res.data.name, email: res.data.email, roleId: res.data.role?.id};
+        this.user = {id:res.data.id, name: res.data.name, email: res.data.email};
         this.role = res.data.role?.name;
         localStorage.setItem('token', this.token);
         localStorage.setItem('user', JSON.stringify(this.user));

@@ -76,6 +76,12 @@ async function deleteRole(id: any) {
     toast.error(e?.message || 'Failed to delete role')
   }
 }
+
+const addRole = async (role: any) => {
+  await roleStore.addRole(role)
+  toast.success('Role created successfully')
+  roleStore.fetchRoles()
+}
 </script>
 
 <template>
@@ -147,6 +153,6 @@ async function deleteRole(id: any) {
     </div>
 
     <!-- Modal -->
-    <CreateRoleModal :isOpen="isModalOpen" @close="isModalOpen = false" />
+    <CreateRoleModal :isOpen="isModalOpen" @roleCreated="addRole" @close="isModalOpen = false" />
   </div>
 </template>
